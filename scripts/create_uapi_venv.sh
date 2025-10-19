@@ -43,8 +43,8 @@ pip install -r "$ROOT_DIR/unstructured-api/requirements/base.txt"
 
 # Replace yanked packages with supported releases.
 pip install --no-deps --upgrade \
-    "XlsxWriter==3.2.8" \
-    "pypdfium2==4.29.0"
+    "XlsxWriter==3.2.9" \
+    "pypdfium2==4.30.0"
 
 # Replace CPU builds with GPU-enabled packages.
 pip uninstall -y torch torchvision torchaudio onnxruntime || true
