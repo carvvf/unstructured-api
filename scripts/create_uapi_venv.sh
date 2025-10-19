@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 VENV_NAME="${VENV_NAME:-.uapi-venv}"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 TORCH_INDEX_URL="${TORCH_INDEX_URL:-https://download.pytorch.org/whl/nightly/cu128}"
@@ -18,7 +18,7 @@ if [[ -z "${ONNXRUNTIME_GPU_WHEEL:-}" ]]; then
     if (( ${#default_wheels[@]} )); then
         ONNXRUNTIME_GPU_WHEEL="${default_wheels[0]}"
     else
-        echo "ERROR: set ONNXRUNTIME_GPU_WHEEL to the GPU wheel built from onnxruntime." >&2
+        echo "ERROR: set ONNXRUNTIME_GPU_WHEEL to the GPU wheel built from onnxruntime or run ./build_onnx.sh." >&2
         exit 1
     fi
 fi
@@ -40,6 +40,11 @@ source "$ROOT_DIR/$VENV_NAME/bin/activate"
 python -m pip install --upgrade pip setuptools wheel
 
 pip install -r "$ROOT_DIR/unstructured-api/requirements/base.txt"
+
+# Replace yanked packages with supported releases.
+pip install --no-deps --upgrade \
+    "XlsxWriter==3.2.8" \
+    "pypdfium2==4.29.0"
 
 # Replace CPU builds with GPU-enabled packages.
 pip uninstall -y torch torchvision torchaudio onnxruntime || true
