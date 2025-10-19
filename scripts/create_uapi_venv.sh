@@ -18,7 +18,7 @@ if [[ -z "${ONNXRUNTIME_GPU_WHEEL:-}" ]]; then
     if (( ${#default_wheels[@]} )); then
         ONNXRUNTIME_GPU_WHEEL="${default_wheels[0]}"
     else
-        echo "ERROR: set ONNXRUNTIME_GPU_WHEEL to the GPU wheel built from onnxruntime or run ./build_onnx.sh." >&2
+        echo "ERROR: set ONNXRUNTIME_GPU_WHEEL to the GPU wheel built from onnxruntime or run ./build_onnx.sh" >&2
         exit 1
     fi
 fi

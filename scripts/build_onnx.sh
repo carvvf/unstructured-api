@@ -7,13 +7,20 @@ sudo apt update
 sudo apt install -y python3-dev python3-pip python3-numpy build-essential ninja-build git \
     libcudnn9-cuda-12 libcudnn9-dev-cuda-12 libcudnn9-headers-cuda-12
 
+echo ""
+echo "###############################################"
 echo "Check your C++ compiler version:"
+echo "###############################################"
 gcc -v
 
-### To install NVIDIA drivers and C compiler, please refer to NVIDIA official documentation
+echo ""
+echo "###############################################"
 echo "Check your NVIDIA compiler version:"
+echo "If you need to install NVIDIA drivers and compiler, please refer to NVIDIA official documentation"
+echo "###############################################"
 nvcc -V
 
+echo ""
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd $ROOT_DIR
 
