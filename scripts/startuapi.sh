@@ -45,7 +45,7 @@ export UNSTRUCTURED_API_KEY=sk-fake-api-key
 export PYTHONPATH="$PROJECT_DIR${PYTHONPATH:+:$PYTHONPATH}"
 
 uvicorn prepline_general.api.app:app \
-  --reload --log-config "$PROJECT_DIR/logger_config.yaml" \
-  --host 0.0.0.0 --port 8000
+  --log-config "$PROJECT_DIR/logger_config.yaml" \
+  --host 0.0.0.0 --port 8000 #--reload
 
 #deactivate
