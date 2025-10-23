@@ -143,7 +143,8 @@ When `doctr` is enabled you can optionally control the runtime with:
 
 Make sure the corresponding packages are available in your environment before switching engines.
 For PaddleOCR, provide Latin-script requests using a single `ocr_languages` value such as `latin`
-(`ita+eng` is automatically mapped to `latin`).
+(`ita+eng` is automatically mapped to `latin`). When you only supply the `languages` form field,
+the API forwards those codes to the active OCR backend automatically.
 
 #### Coordinates
 

@@ -46,6 +46,7 @@ def configure_ocr_backend_from_env() -> Optional[str]:
             qname = _resolve_backend(existing)
             if qname != existing:
                 os.environ["OCR_AGENT"] = qname
+            logger.info("Using OCR backend from existing OCR_AGENT=%s", existing)
         else:
             return None
 

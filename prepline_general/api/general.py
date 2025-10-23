@@ -315,6 +315,8 @@ def pipeline_api(
         starting_page_number = 1
 
     ocr_languages_str = "+".join(ocr_languages) if ocr_languages and len(ocr_languages) else None
+    if not ocr_languages_str and languages:
+        ocr_languages_str = "+".join(languages)
 
     extract_image_block_to_payload = bool(extract_image_block_types)
 
@@ -377,6 +379,9 @@ def pipeline_api(
             "starting_page_number": starting_page_number,
             "include_slide_notes": include_slide_notes,
         }
+        if _CURRENT_OCR_AGENT:
+            partition_kwargs["ocr_agent"] = _CURRENT_OCR_AGENT
+            partition_kwargs["table_ocr_agent"] = _CURRENT_OCR_AGENT
 
         if file_content_type == "application/pdf" and pdf_parallel_mode_enabled:
             pdf = PdfReader(file)

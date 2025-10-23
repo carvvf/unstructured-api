@@ -86,6 +86,7 @@ class OCRAgentPaddle(OCRAgent):
         """Get the OCR regions from image as a list of text regions with paddle."""
 
         trace_logger.detail("Processing entire page OCR with paddle...")
+        logger.info("PaddleOCR processing page with language=%s", self.language)
 
         ocr_data = self.agent.ocr(np.array(image), cls=True)
         ocr_regions = self.parse_data(ocr_data)

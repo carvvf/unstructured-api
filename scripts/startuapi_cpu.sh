@@ -36,8 +36,8 @@ export UNSTRUCTURED_LOG_LEVEL=TRACE
 export UNSTRUCTURED_TRACE_LOGS=true
 
 export UNSTRUCTURED_API_KEY=sk-fake-api-key
-#export UNSTRUCTURED_OCR_BACKEND=paddle
-export UNSTRUCTURED_OCR_BACKEND=doctr
+export UNSTRUCTURED_OCR_BACKEND=paddle
+#export UNSTRUCTURED_OCR_BACKEND=doctr
 
 python - <<'PY'
 from prepline_general.ocr.config import configure_ocr_backend_from_env

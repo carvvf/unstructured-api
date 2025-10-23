@@ -93,6 +93,7 @@ class OCRAgentDocTR(OCRAgent):
         from unstructured.partition.pdf_image.inference_utils import build_text_region_from_coords
         from unstructured_inference.inference.elements import TextRegions
 
+        logger.info("docTR OCR processing page with language=%s", self.language)
         doc = self._run_predictor(image)
         page = doc.pages[0]
         height, width = page.dimensions
