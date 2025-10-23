@@ -127,6 +127,24 @@ curl -X 'POST' \
   | jq -C . | less -R
 ```
 
+#### OCR backends
+
+The API defaults to Tesseract. You can select alternative OCR engines by setting the `UNSTRUCTURED_OCR_BACKEND`
+environment variable before starting the service:
+
+- `UNSTRUCTURED_OCR_BACKEND=tesseract` (default)
+- `UNSTRUCTURED_OCR_BACKEND=paddle` — requires `unstructured-paddleocr` to be installed.
+- `UNSTRUCTURED_OCR_BACKEND=doctr` — requires `python-doctr` and its dependencies.
+
+When `doctr` is enabled you can optionally control the runtime with:
+
+- `UNSTRUCTURED_DOCTR_DEVICE=cpu|gpu|auto` (defaults to `auto`).
+- `UNSTRUCTURED_DOCTR_DET_ARCH` / `UNSTRUCTURED_DOCTR_RECO_ARCH` to override the detector and recognizer models.
+
+Make sure the corresponding packages are available in your environment before switching engines.
+For PaddleOCR, provide Latin-script requests using a single `ocr_languages` value such as `latin`
+(`ita+eng` is automatically mapped to `latin`).
+
 #### Coordinates
 
 When elements are extracted from PDFs or images, it may be useful to get their bounding boxes as well. Set the `coordinates` parameter to `true` to add this field to the elements in the response.

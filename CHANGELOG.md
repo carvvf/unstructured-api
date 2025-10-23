@@ -1,3 +1,7 @@
+## Unreleased
+* Allow selecting PaddleOCR or docTR via the `UNSTRUCTURED_OCR_BACKEND` environment variable.
+* Normalize OCR language hints for PaddleOCR (e.g. `ita+eng` -> `latin`).
+
 ## 0.0.89
 * Upgrade Pillow to 11.3.0 to address a CVE
 

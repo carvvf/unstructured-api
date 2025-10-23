@@ -10,6 +10,9 @@ TORCHVISION_VERSION="${TORCHVISION_VERSION:-0.22.1}"
 TORCHAUDIO_VERSION="${TORCHAUDIO_VERSION:-2.7.1}"
 TORCH_INDEX_URL="${TORCH_INDEX_URL:-https://download.pytorch.org/whl/cpu}"
 ONNXRUNTIME_VERSION="${ONNXRUNTIME_VERSION:-1.22.0}"
+PADDLE_VERSION="${PADDLE_VERSION:-2.6.2}"
+UNSTRUCTURED_PADDLEOCR_VERSION="${UNSTRUCTURED_PADDLEOCR_VERSION:-2.10.0}"
+PYTHON_DOCTR_VERSION="${PYTHON_DOCTR_VERSION:-1.0.0}"
 
 if [[ -d "$ROOT_DIR/$VENV_NAME" ]]; then
     echo "Reusing existing virtual environment at $ROOT_DIR/$VENV_NAME"
@@ -34,6 +37,12 @@ pip install -r "$TMP_REQUIREMENTS" \
     --extra-index-url "$TORCH_INDEX_URL"
 
 pip install --upgrade "onnxruntime==${ONNXRUNTIME_VERSION}"
+
+# High-accuracy OCR backends (PaddleOCR + docTR) and their runtimes.
+pip install \
+    "paddlepaddle==${PADDLE_VERSION}" \
+    "unstructured-paddleocr==${UNSTRUCTURED_PADDLEOCR_VERSION}" \
+    "python-doctr==${PYTHON_DOCTR_VERSION}"
 
 # Replace yanked packages with supported releases.
 pip install --no-deps --upgrade \

@@ -33,6 +33,7 @@ from starlette.types import Send
 
 from prepline_general.api.filetypes import get_validated_mimetype
 from prepline_general.api.models.form_params import GeneralFormParams
+from prepline_general.ocr.config import configure_ocr_backend_from_env
 from unstructured.documents.elements import Element
 from unstructured.partition.auto import partition
 from unstructured.staging.base import (
@@ -57,6 +58,8 @@ def is_compatible_response_type(media_type: str, response_type: type) -> bool:
 
 
 logger = logging.getLogger("unstructured_api")
+
+_CURRENT_OCR_AGENT = configure_ocr_backend_from_env()
 
 
 def get_pdf_splits(pdf_pages: Sequence[PageObject], split_size: int = 1):
