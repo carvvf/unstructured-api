@@ -38,5 +38,5 @@ export PYTHONPATH="$PROJECT_DIR${PYTHONPATH:+:$PYTHONPATH}"
 
 uvicorn prepline_general.api.app:app \
   --log-config "$PROJECT_DIR/logger_config.yaml" \
-  --host 0.0.0.0 --port 8000 #--reload
+  --host 0.0.0.0 --port 8000 --reload
 

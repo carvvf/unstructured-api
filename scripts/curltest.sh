@@ -10,4 +10,11 @@ curl -X POST http://localhost:8000/general/v0/general \
   -F 'strategy=hi_res' \
   -F 'hi_res_model_name=yolox' \
   -F 'coordinates=true' \
+  -F 'extract_image_block_types[]=Image' \
+  -F 'extract_image_block_types[]=Table' \
+  -F 'extract_image_block_types[]=Picture' \
+  -F 'extract_image_block_types[]=Formula' \
+  -F 'extract_image_block_to_payload=true' \
+  -F 'languages=ita' \
+  -F 'languages=eng' \
   | jq '.'
