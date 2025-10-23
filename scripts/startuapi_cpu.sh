@@ -25,11 +25,13 @@ source "$VENV_DIR/bin/activate"
 cd "$PROJECT_DIR"
 
 export UNSTRUCTURED_ONNX_PROVIDERS=CPUExecutionProvider
+export UNSTRUCTURED_DEFAULT_MODEL_NAME=detectron2_mask_rcnn
 
 python - <<'PY'
 from unstructured_inference.models.base import get_model
-model = get_model("detectron2_onnx")
+model = get_model()
 print(model.model.get_providers())
+print(model.__class__.__name__, model.model_path)
 PY
 
 export UNSTRUCTURED_LOG_LEVEL=TRACE
