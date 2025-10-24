@@ -31,7 +31,7 @@ python - <<'PY'
 from unstructured_inference.models.base import get_model
 model = get_model()
 print(model.model.get_providers())
-#print(model.__class__.__name__, model.model_path)
+print(model.__class__.__name__, model.model_path)
 PY
 
 export UNSTRUCTURED_LOG_LEVEL=TRACE
@@ -40,7 +40,7 @@ export UNSTRUCTURED_TRACE_LOGS=true
 ### Full page rotation is not recommended
 export UNSTRUCTURED_ENABLE_LAYOUT_PAGE_ROTATION_DETECTION=false
 
-### Branch unstructured-inference: feature/pdf-native-text-extraction
+### Env var for branch unstructured-inference:feature/pdf-native-text-extraction
 #export UNSTRUCTURED_USE_PDF_TEXT_EXTRACTION=true
 
 export UNSTRUCTURED_API_KEY=sk-fake-api-key
