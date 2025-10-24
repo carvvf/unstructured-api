@@ -461,8 +461,20 @@ def pipeline_api(
         return df.to_csv(index=False)
 
     result = convert_to_isd(elements)
+    result = _filter_single_character_text(result)
 
     return result
+
+
+def _filter_single_character_text(elements: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Drop elements whose `text` field collapses to a single character or an empty string."""
+    filtered_elements: List[Dict[str, Any]] = []
+    for element in elements:
+        text = element.get("text")
+        if isinstance(text, str) and len(text.strip()) <= 1:
+            continue
+        filtered_elements.append(element)
+    return filtered_elements
 
 
 def _check_free_memory():
