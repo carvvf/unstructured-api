@@ -2,7 +2,8 @@
 
 set -euo pipefail
 
-FILE_PATH="/home/carlo/AI/"
+#FILE_PATH="/home/carlo/AI/"
+FILE_PATH="/home/carlo/Documenti/AI/data/odg_2023/"
 
 FILE_NAME="odg019_16_02_23.pdf"
 #FILE_NAME="odg064_08_09_23_All_4.pdf"
@@ -23,3 +24,6 @@ curl -X POST http://localhost:8000/general/v0/general \
   -F 'languages=ita' \
   -F 'languages=eng' \
   | jq '.' | tee $FILE_PATH$FILE_NAME.json
+
+source ../../.uapi_venv_cpu/bin/activate
+./json2pdf.py $FILE_PATH$FILE_NAME.json
