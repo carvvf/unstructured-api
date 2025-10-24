@@ -385,6 +385,55 @@ Title,d5b612de8cd918addd9569b0255b65b2,Unstructured Technologies,family-day.eml,
 Title,2e0b9e8ee04b9594a9c26d8535b818ff,Data Scientist,family-day.eml,['Mallori Harrell <mallori@unstructured.io>'],['Mallori Harrell <mallori@unstructured.io>'],Family Day,['eng'],message/rfc822
 ```
 
+#### Review JSON results visually
+
+When you need to verify the extracted content at a glance, convert the JSON output into an interactive preview.
+The utility groups elements by page, highlights their types with color cues, and preserves the text so you can
+open the preview beside the original document.
+
+```
+python scripts/json_to_visual_doc.py sample-docs/spring-weather.html.json
+```
+
+The command above writes `sample-docs/spring-weather.html.analysis.html`. Open that file in a browser to browse the
+elements, their text, and the associated metadata. Add `--source-file <path-to-original>` to record the original
+document location in the header, pass `-o <path>` to control the destination, or `--title` to override the report
+heading.
+
+If you captured bounding boxes (`coordinates=true`), you can rebuild page views positioned by coordinates:
+
+```
+python scripts/json_to_visual_doc.py sample-docs/spring-weather.html.json --view layout
+```
+
+This creates `sample-docs/spring-weather.html.layout.html`, drawing every page with absolutely positioned overlays. Any
+elements lacking coordinates are listed separately so you can spot gaps easily. Prefer a vector version that scales
+cleanly and keeps text editable?
+
+```
+python scripts/json_to_visual_doc.py sample-docs/spring-weather.html.json --view svg
+```
+
+The command produces `sample-docs/spring-weather.html.layout.svg`, one scrollable SVG that keeps text selectable and
+coordinates precise for overlay or external comparison.
+
+Need a PDF counterpart? A dedicated helper renders the same layout into a paginated PDF (tables are rebuilt from the
+HTML snippets in the JSON, images are trimmed, and coordinates respected):
+
+```
+python scripts/json2pdf.py sample-docs/spring-weather.html.json --target-width 595 --margin 36
+```
+
+The script requires `reportlab` (`pip install reportlab`). Adjust `--target-width`/`--margin` to fit your page size.
+
+If you want the embedded images to be trimmed automatically (so logos and firme riempiono l'area), install Pillow:
+
+```
+pip install --upgrade pillow
+```
+
+Senza Pillow il layout viene generato comunque, ma le immagini mantengono l'eventuale bordo originale.
+
 #### Parallel Mode for PDFs
 As mentioned above, processing a pdf using `hi_res` is currently a slow operation. One workaround is to split the pdf into smaller files, process these asynchronously, and merge the results. You can enable parallel processing mode with the following env variables:
 
