@@ -427,6 +427,7 @@ python scripts/json2pdf.py sample-docs/spring-weather.html.json --target-width 5
 ```
 
 The script requires `reportlab` (`pip install reportlab`). Adjust `--target-width`/`--margin` to fit your page size.
+Add `--hover-tooltips` to embed element metadata as PDF tooltips that appear when hovering the rendered boxes.
 
 If you want the embedded images to be trimmed automatically (so logos and firme riempiono l'area), install Pillow:
 

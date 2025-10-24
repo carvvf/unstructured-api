@@ -4,16 +4,16 @@
 from __future__ import annotations
 
 import argparse
-import sys
-import math
 import base64
 import binascii
+import math
+import sys
 from html import escape, unescape
 from html.parser import HTMLParser
 from io import BytesIO
 from pathlib import Path
-from typing import Mapping, Sequence
 import re
+from typing import Mapping, Sequence
 
 from reportlab.lib.colors import Color, HexColor
 from reportlab.lib.enums import TA_LEFT
@@ -414,6 +414,112 @@ def draw_image(
     canv.restoreState()
 
 
+def _tooltip_text(
+    element: Mapping[str, object],
+    *,
+    page_label: str,
+    el_type: str,
+    raw_text: str,
+    table_html: str | None,
+) -> str | None:
+    """Compose a tooltip payload summarising the element."""
+    parts: list[str] = [f"Page: {page_label}", f"Type: {el_type}"]
+
+    metadata = element.get("metadata") if isinstance(element, Mapping) else None
+    element_id = None
+    if isinstance(metadata, Mapping):
+        element_id = metadata.get("id") or metadata.get("element_id") or metadata.get("filename")
+    if element_id:
+        parts.append(f"ID: {element_id}")
+
+    summary_source = raw_text.strip()
+    if not summary_source and table_html:
+        summary_source = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", table_html)).strip()
+    if summary_source:
+        compact = re.sub(r"\s+", " ", summary_source)
+        if len(compact) > 420:
+            compact = compact[:417].rstrip() + "..."
+        parts.append(f"Text: {compact}")
+
+    tooltip = "\n".join(parts)
+    tooltip = tooltip.strip()
+    if not tooltip:
+        return None
+    if len(tooltip) > 600:
+        tooltip = tooltip[:597].rstrip() + "..."
+    tooltip = tooltip.replace("\x00", " ")
+    return tooltip
+
+
+def _add_mouseover_annotation(
+    canv: canvas.Canvas,
+    *,
+    rect: tuple[float, float, float, float],
+    contents: str,
+    name: str,
+) -> None:
+    x1, y1, x2, y2 = rect
+    min_size = 8.0
+    if x2 - x1 < min_size:
+        x2 = x1 + min_size
+    if y2 - y1 < min_size:
+        y2 = y1 + min_size
+    try:
+        canv.textAnnotation(
+            contents,
+            Rect=(x1, y1, x2, y2),
+            relative=0,
+            name=name,
+            Open=0,
+        )
+    except Exception:
+        # Ignore annotation failures to keep PDF generation resilient.
+        pass
+
+
+def _annotation_rect(
+    *,
+    pdf_x: float,
+    pdf_y: float,
+    box_width: float,
+    box_height: float,
+) -> tuple[float, float, float, float] | None:
+    if box_width <= 0 or box_height <= 0:
+        return None
+
+    padding = max(1.5, min(6.0, box_width * 0.05, box_height * 0.05))
+    available_w = box_width - (2 * padding)
+    available_h = box_height - (2 * padding)
+    size = min(16.0, available_w, available_h)
+    if size < 6.0:
+        return None
+    if size < 8.0:
+        size = max(6.0, size)
+    else:
+        size = max(8.0, min(size, 18.0))
+    size = min(size, available_w, available_h)
+    if size < 6.0:
+        return None
+
+    x2 = pdf_x + box_width - padding
+    x1 = x2 - size
+    if x1 < pdf_x + padding:
+        x1 = pdf_x + padding
+        x2 = x1 + size
+
+    y1 = pdf_y + padding
+    y2 = y1 + size
+    max_y = pdf_y + box_height - padding
+    if y2 > max_y:
+        y2 = max_y
+        y1 = y2 - size
+        if y1 < pdf_y + padding:
+            y1 = pdf_y + padding
+            y2 = y1 + size
+
+    return x1, y1, x2, y2
+
+
 def render_pdf(
     json_path: Path,
     output_path: Path,
@@ -422,6 +528,7 @@ def render_pdf(
     elements: Sequence[Mapping[str, object]],
     target_width: float,
     margin: float,
+    enable_mouseover: bool,
 ) -> None:
     grouped = grouped_by_page(elements)
     if not grouped:
@@ -472,7 +579,7 @@ def render_pdf(
         )
         canv.restoreState()
 
-        for element in page_elements:
+        for element_index, element in enumerate(page_elements, start=1):
             el_type = element_type(element)
             accent_hex, background_hex = color_for_type(el_type)
             metadata = element.get("metadata") if isinstance(element, Mapping) else None
@@ -557,6 +664,29 @@ def render_pdf(
                     line_color=parse_color("#1f2937"),
                 )
 
+            if enable_mouseover:
+                tooltip = _tooltip_text(
+                    element,
+                    page_label=str(page_label),
+                    el_type=el_type,
+                    raw_text=raw_text,
+                    table_html=table_html,
+                )
+                if tooltip:
+                    rect = _annotation_rect(
+                        pdf_x=pdf_x,
+                        pdf_y=pdf_y,
+                        box_width=max(1.0, scaled_width),
+                        box_height=max(1.0, scaled_height),
+                    )
+                    if rect:
+                        _add_mouseover_annotation(
+                            canv,
+                            rect=rect,
+                            contents=tooltip,
+                            name=f"hover-{page_label}-{element_index}",
+                        )
+
         canv.showPage()
 
     canv.save()
@@ -593,6 +723,11 @@ def parse_args() -> argparse.Namespace:
         type=str,
         help="Optional custom title printed in the PDF header.",
     )
+    parser.add_argument(
+        "--hover-tooltips",
+        action="store_true",
+        help="Embed mouse-over tooltips in the PDF with element type and text snippets.",
+    )
     return parser.parse_args()
 
 
@@ -614,6 +749,7 @@ def main() -> int:
         elements=elements,
         target_width=args.target_width,
         margin=args.margin,
+        enable_mouseover=args.hover_tooltips,
     )
 
     print(f"PDF written to {output_pdf}")

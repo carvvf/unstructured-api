@@ -25,7 +25,8 @@ source "$VENV_DIR/bin/activate"
 cd "$PROJECT_DIR"
 
 export UNSTRUCTURED_ONNX_PROVIDERS=CPUExecutionProvider
-export UNSTRUCTURED_DEFAULT_MODEL_NAME=detectron2_mask_rcnn
+#export UNSTRUCTURED_DEFAULT_MODEL_NAME=detectron2_mask_rcnn
+export UNSTRUCTURED_DEFAULT_MODEL_NAME=yolox
 
 python - <<'PY'
 from unstructured_inference.models.base import get_model
