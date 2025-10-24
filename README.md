@@ -410,6 +410,8 @@ This creates `sample-docs/spring-weather.html.layout.html`, drawing every page w
 elements lacking coordinates are listed separately so you can spot gaps easily. Prefer a vector version that scales
 cleanly and keeps text editable?
 
+> **Note:** `scripts/json_to_visual_doc.py` is still a work in progress—use `scripts/json2pdf.py` for a stable PDF conversion.
+
 ```
 python scripts/json_to_visual_doc.py sample-docs/spring-weather.html.json --view svg
 ```

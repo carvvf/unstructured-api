@@ -7,7 +7,7 @@ PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 WORKSPACE_DIR="$(cd "$PROJECT_DIR/.." && pwd)"
 
 VENV_DIR=""
-for candidate in "$PROJECT_DIR/uapi_venv_cpu" "$WORKSPACE_DIR/uapi_venv_cpu"; do
+for candidate in "$PROJECT_DIR/.uapi_venv_cpu" "$WORKSPACE_DIR/.uapi_venv_cpu"; do
   if [[ -f "$candidate/bin/activate" ]]; then
     VENV_DIR="$candidate"
     break
@@ -15,7 +15,7 @@ for candidate in "$PROJECT_DIR/uapi_venv_cpu" "$WORKSPACE_DIR/uapi_venv_cpu"; do
 done
 
 if [[ -z "$VENV_DIR" ]]; then
-  echo "ERROR: could not find uapi_venv_cpu. Run scripts/create_uapi_venv_cpu.sh to provision it." >&2
+  echo "ERROR: could not find .uapi_venv_cpu. Run scripts/create_uapi_venv_cpu.sh to provision it." >&2
   exit 1
 fi
 

@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-VENV_NAME="${VENV_NAME:-uapi_venv_cpu}"
+VENV_NAME="${VENV_NAME:-.uapi_venv_cpu}"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 TORCH_VERSION="${TORCH_VERSION:-2.7.1}"
 TORCHVISION_VERSION="${TORCHVISION_VERSION:-0.22.1}"
@@ -13,6 +13,19 @@ ONNXRUNTIME_VERSION="${ONNXRUNTIME_VERSION:-1.22.0}"
 PADDLE_VERSION="${PADDLE_VERSION:-2.6.2}"
 UNSTRUCTURED_PADDLEOCR_VERSION="${UNSTRUCTURED_PADDLEOCR_VERSION:-2.10.0}"
 PYTHON_DOCTR_VERSION="${PYTHON_DOCTR_VERSION:-1.0.0}"
+LOCAL_INFERENCE_REPO="${LOCAL_INFERENCE_REPO:-$ROOT_DIR/unstructured-inference}"
+UNSTRUCTURED_INFERENCE_BRANCH="${UNSTRUCTURED_INFERENCE_BRANCH:-custom-model}"
+
+if [[ ! -d "$LOCAL_INFERENCE_REPO" ]]; then
+    echo "ERROR: expected local unstructured-inference repo at $LOCAL_INFERENCE_REPO" >&2
+    exit 1
+fi
+
+CURRENT_BRANCH="$(git -C "$LOCAL_INFERENCE_REPO" rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
+if [[ "$CURRENT_BRANCH" != "$UNSTRUCTURED_INFERENCE_BRANCH" ]]; then
+    echo "Checking out $UNSTRUCTURED_INFERENCE_BRANCH in $LOCAL_INFERENCE_REPO"
+    git -C "$LOCAL_INFERENCE_REPO" checkout "$UNSTRUCTURED_INFERENCE_BRANCH"
+fi
 
 if [[ -d "$ROOT_DIR/$VENV_NAME" ]]; then
     echo "Reusing existing virtual environment at $ROOT_DIR/$VENV_NAME"
@@ -28,6 +41,7 @@ python -m pip install --upgrade pip setuptools wheel
 TMP_REQUIREMENTS="$(mktemp)"
 trap 'rm -f "$TMP_REQUIREMENTS"' EXIT
 cp "$ROOT_DIR/unstructured-api/requirements/base.txt" "$TMP_REQUIREMENTS"
+sed -i '/^unstructured-inference==/d' "$TMP_REQUIREMENTS"
 
 sed -i "s/^torch==${TORCH_VERSION}\$/torch==${TORCH_VERSION}+cpu/" "$TMP_REQUIREMENTS"
 sed -i "s/^torchvision==${TORCHVISION_VERSION}\$/torchvision==${TORCHVISION_VERSION}+cpu/" "$TMP_REQUIREMENTS"
@@ -44,9 +58,16 @@ pip install \
     "unstructured-paddleocr==${UNSTRUCTURED_PADDLEOCR_VERSION}" \
     "python-doctr==${PYTHON_DOCTR_VERSION}"
 
+# Core testing/visualization extras.
+pip install \
+    "pytest" \
+    "reportlab"
+
 # Replace yanked packages with supported releases.
 pip install --no-deps --upgrade \
     "XlsxWriter==3.2.9" \
     "pypdfium2==4.30.0"
+
+pip install --no-deps -e "$LOCAL_INFERENCE_REPO"
 
 echo "Virtual environment ready at $ROOT_DIR/$VENV_NAME"

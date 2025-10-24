@@ -292,10 +292,8 @@ def trim_image_base64(image_base64: str) -> tuple[str, tuple[int, int] | None]:
         base_repo = Path(__file__).resolve().parents[1]
         workspace_root = base_repo.parent
         candidate_roots = [
-            base_repo / "uapi_venv_cpu/lib/python3.12/site-packages",
-            base_repo / "uapi_venv/lib/python3.12/site-packages",
-            workspace_root / "uapi_venv_cpu/lib/python3.12/site-packages",
-            workspace_root / "uapi_venv/lib/python3.12/site-packages",
+            base_repo / ".uapi_venv_cpu/lib/python3.12/site-packages",
+            workspace_root / ".uapi_venv_cpu/lib/python3.12/site-packages",
         ]
         inserted = False
         for root in candidate_roots:
