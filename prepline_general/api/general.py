@@ -36,6 +36,7 @@ from prepline_general.api.models.form_params import GeneralFormParams
 from prepline_general.api.postprocessing import (
     _filter_overlapping_duplicate_elements,
     _filter_single_character_text,
+    repair_rotated_text_blocks,
 )
 from prepline_general.ocr.config import configure_ocr_backend_from_env
 from unstructured.documents.elements import Element
@@ -467,6 +468,19 @@ def pipeline_api(
         return df.to_csv(index=False)
 
     result = convert_to_isd(elements)
+    if os.environ.get("UNSTRUCTURED_ENABLE_ROTATED_TEXT_FIX", "false").lower() in (
+        "1",
+        "true",
+        "t",
+    ):
+        result = repair_rotated_text_blocks(
+            result,
+            file_obj=file,
+            content_type=file_content_type,
+            ocr_agent=_CURRENT_OCR_AGENT,
+            ocr_languages=ocr_languages_str,
+        )
+
     result = _filter_single_character_text(result)
     result = _filter_overlapping_duplicate_elements(result)
 

@@ -40,6 +40,8 @@ export UNSTRUCTURED_TRACE_LOGS=true
 
 ### Full page rotation is not recommended
 export UNSTRUCTURED_ENABLE_LAYOUT_PAGE_ROTATION_DETECTION=false
+### Enable single box rotation
+export UNSTRUCTURED_ENABLE_ROTATED_TEXT_FIX=true
 
 ### Env var for branch unstructured-inference:feature/pdf-native-text-extraction
 #export UNSTRUCTURED_USE_PDF_TEXT_EXTRACTION=true
