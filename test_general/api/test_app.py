@@ -1,6 +1,8 @@
 import io
 import os
+import sys
 import tempfile
+import types
 import uuid
 from pathlib import Path
 from unittest.mock import ANY, Mock
@@ -11,6 +13,24 @@ import requests
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
 from pypdf import PdfReader, PdfWriter
+
+try:
+    import unstructured_inference  # type: ignore  # noqa: F401
+except ModuleNotFoundError:  # pragma: no cover - test shim
+    inference_module = types.ModuleType("unstructured_inference")
+    models_module = types.ModuleType("unstructured_inference.models")
+    base_module = types.ModuleType("unstructured_inference.models.base")
+
+    class UnknownModelException(Exception):
+        pass
+
+    base_module.UnknownModelException = UnknownModelException
+    models_module.base = base_module
+    inference_module.models = models_module
+
+    sys.modules["unstructured_inference"] = inference_module
+    sys.modules["unstructured_inference.models"] = models_module
+    sys.modules["unstructured_inference.models.base"] = base_module
 
 from prepline_general.api import general
 from prepline_general.api.app import app
@@ -111,28 +131,27 @@ def test_general_api(example_filename, content_type):
 
 def test_metadata_fields_removed():
     """
-    Verify that responses do not include coordinates unless requested
-    Verify that certain other metadata fields are dropped
+    Verify that responses include coordinates by default, can remove when requested,
+    and that certain other metadata fields are dropped.
     """
     client = TestClient(app)
     test_file = Path("sample-docs") / "layout-parser-paper-fast.jpg"
     response = client.post(
         MAIN_API_ROUTE,
         files=[("files", (str(test_file), open(test_file, "rb")))],
-        data={"strategy": "hi_res"},
-    )
-
-    assert response.status_code == 200
-    response_without_coords = response.json()
-
-    response = client.post(
-        MAIN_API_ROUTE,
-        files=[("files", (str(test_file), open(test_file, "rb")))],
-        data={"coordinates": "true", "strategy": "hi_res"},
     )
 
     assert response.status_code == 200
     response_with_coords = response.json()
+
+    response = client.post(
+        MAIN_API_ROUTE,
+        files=[("files", (str(test_file), open(test_file, "rb")))],
+        data={"coordinates": "false"},
+    )
+
+    assert response.status_code == 200
+    response_without_coords = response.json()
 
     # Each element should be the same except for the coordinates field
     # Also, check for metadata fields we explicitly dropped
@@ -777,6 +796,8 @@ def test_parallel_mode_passes_params(monkeypatch):
         extract_image_block_to_payload=True,  # Set to true because block_types is non empty
         unique_element_ids=True,
         starting_page_number=1,
+        ocr_agent=general._CURRENT_OCR_AGENT,
+        table_ocr_agent=general._CURRENT_OCR_AGENT,
         # -- chunking options --
         chunking_strategy="by_title",
         combine_text_under_n_chars=501,

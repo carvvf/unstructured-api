@@ -18,13 +18,13 @@ class GeneralFormParams(BaseModel):
     skip_infer_table_types: Optional[List[str]]
     gz_uncompressed_content_type: Optional[str]
     output_format: str
-    coordinates: bool
+    coordinates: bool = True
     encoding: str
     content_type: Optional[str]
     hi_res_model_name: Optional[str]
     include_page_breaks: bool
     pdf_infer_table_structure: bool
-    strategy: str
+    strategy: str = "hi_res"
     extract_image_block_types: Optional[List[str]]
     unique_element_ids: bool
     # -- chunking options --
@@ -98,10 +98,10 @@ class GeneralFormParams(BaseModel):
             bool,
             Form(
                 title="Coordinates",
-                description="If true, return coordinates for each element. Default: false",
+                description="If true, return coordinates for each element. Default: true",
             ),
             BeforeValidator(SmartValueParser[bool]().value_or_first_element),
-        ] = False,
+        ] = True,
         content_type: Annotated[
             Optional[str],
             Form(
@@ -153,11 +153,11 @@ class GeneralFormParams(BaseModel):
             Literal["fast", "hi_res", "auto", "ocr_only"],
             Form(
                 title="Strategy",
-                description="The strategy to use for partitioning PDF/image. Options are fast, hi_res, auto. Default: auto",
+                description="The strategy to use for partitioning PDF/image. Options are fast, hi_res, auto. Default: hi_res",
                 examples=["auto", "hi_res"],
             ),
             BeforeValidator(SmartValueParser[str]().literal_value_stripped_or_first_element),
-        ] = "auto",
+        ] = "hi_res",
         extract_image_block_types: Annotated[
             List[str],
             Form(

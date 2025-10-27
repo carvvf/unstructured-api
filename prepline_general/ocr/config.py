@@ -8,6 +8,7 @@ from unstructured.partition.utils import constants as unstructured_constants
 
 DOCTR_OCR_AGENT_QNAME = "prepline_general.ocr.doctr_ocr.OCRAgentDocTR"
 PADDLE_OCR_AGENT_QNAME = "prepline_general.ocr.paddle_ocr.OCRAgentPaddle"
+DEFAULT_OCR_AGENT_QNAME = PADDLE_OCR_AGENT_QNAME
 
 _BACKEND_ALIASES = {
     "tesseract": unstructured_constants.OCR_AGENT_TESSERACT,
@@ -48,7 +49,9 @@ def configure_ocr_backend_from_env() -> Optional[str]:
                 os.environ["OCR_AGENT"] = qname
             logger.info("Using OCR backend from existing OCR_AGENT=%s", existing)
         else:
-            return None
+            qname = DEFAULT_OCR_AGENT_QNAME
+            os.environ["OCR_AGENT"] = qname
+            logger.info("Defaulting OCR backend to %s", qname)
 
     module_name = qname.rsplit(".", 1)[0]
     _ensure_whitelist_contains(module_name)

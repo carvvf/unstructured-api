@@ -33,6 +33,10 @@ from starlette.types import Send
 
 from prepline_general.api.filetypes import get_validated_mimetype
 from prepline_general.api.models.form_params import GeneralFormParams
+from prepline_general.api.postprocessing import (
+    _filter_overlapping_duplicate_elements,
+    _filter_single_character_text,
+)
 from prepline_general.ocr.config import configure_ocr_backend_from_env
 from unstructured.documents.elements import Element
 from unstructured.partition.auto import partition
@@ -230,14 +234,14 @@ def pipeline_api(
     filename: str = "",
     file_content_type: Optional[str] = None,
     response_type: str = "application/json",
-    coordinates: bool = False,
+    coordinates: bool = True,
     encoding: str = "utf-8",
     hi_res_model_name: Optional[str] = None,
     include_page_breaks: bool = False,
     ocr_languages: Optional[List[str]] = None,
     pdf_infer_table_structure: bool = True,
     skip_infer_table_types: Optional[List[str]] = None,
-    strategy: str = "auto",
+    strategy: str = "hi_res",
     xml_keep_tags: bool = False,
     languages: Optional[List[str]] = None,
     extract_image_block_types: Optional[List[str]] = None,
@@ -259,6 +263,8 @@ def pipeline_api(
         # -- NOTE(scanny): request.client is None in certain testing environments --
         or (request.client and request.client.host.startswith("10."))
     )
+
+    hi_res_model_name = _resolve_hi_res_model_name(hi_res_model_name)
 
     if not is_internal_request:
         logger.debug(
@@ -462,19 +468,21 @@ def pipeline_api(
 
     result = convert_to_isd(elements)
     result = _filter_single_character_text(result)
+    result = _filter_overlapping_duplicate_elements(result)
 
     return result
 
 
-def _filter_single_character_text(elements: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """Drop elements whose `text` field collapses to a single character or an empty string."""
-    filtered_elements: List[Dict[str, Any]] = []
-    for element in elements:
-        text = element.get("text")
-        if isinstance(text, str) and len(text.strip()) <= 1:
-            continue
-        filtered_elements.append(element)
-    return filtered_elements
+def _resolve_hi_res_model_name(model_name: Optional[str]) -> str:
+    """Return the hi-res layout model, favoring request parameter, then env, then YOLOX."""
+    if model_name:
+        return model_name
+
+    env_override = os.environ.get("UNSTRUCTURED_HI_RES_MODEL_NAME")
+    if env_override:
+        return env_override
+
+    return "yolox"
 
 
 def _check_free_memory():

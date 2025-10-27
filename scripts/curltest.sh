@@ -15,7 +15,8 @@ FILE_PATH="/home/carlo/Documenti/AI/data/odg_2023/"
 #FILE_NAME="odg052_15_06_23_all_2.pdf"
 #FILE_NAME="odg064_08_09_23_All_4.pdf"
 #FILE_NAME="odg063_05_09_23.pdf"
-FILE_NAME="odg057_09_08_23.pdf"
+#FILE_NAME="odg057_09_08_23.pdf"
+FILE_NAME="odg070_27_09_23.pdf"
 
 #FILE_PATH="/home/carlo/Documenti/AI/source/ingestion/unstructured-api/sample-docs/"
 #FILE_NAME="layout-parser-paper.pdf"
@@ -40,3 +41,4 @@ curl -X POST http://localhost:8000/general/v0/general \
 source ../../.uapi_venv_cpu/bin/activate
 ./json2pdf.py $FILE_PATH$FILE_NAME.json --hover-tooltips
 deactivate
+
