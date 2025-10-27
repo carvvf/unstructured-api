@@ -390,7 +390,11 @@ class _PageImageFetcher:
 
             try:
                 images = convert_from_bytes(
-                    self._file_bytes, first_page=page_number, last_page=page_number
+                    self._file_bytes,
+                    first_page=page_number,
+                    last_page=page_number,
+                    dpi=400,
+                    fmt="png",
                 )
             except Exception as exc:
                 logger.warning(
@@ -400,6 +404,8 @@ class _PageImageFetcher:
                 return None
 
             image = images[0] if images else None
+            if image is not None and image.mode != "RGBA":
+                image = image.convert("RGBA")
             self._pdf_cache[page_number] = image
             return image
 
