@@ -600,7 +600,7 @@ def render_pdf(
             canv.saveState()
             canv.setFillColor(parse_color(background_hex))
             canv.setStrokeColor(parse_color(accent_hex))
-            canv.roundRect(pdf_x, pdf_y, scaled_width, scaled_height, 12, stroke=1, fill=1)
+            canv.rect(pdf_x, pdf_y, scaled_width, scaled_height, stroke=1, fill=1)
             canv.restoreState()
 
             table_html = None
