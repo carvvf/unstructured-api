@@ -5,6 +5,7 @@ import logging
 import math
 import re
 from contextlib import suppress
+import unicodedata
 from typing import IO, TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Tuple
 
 from PIL import Image as PILImage
@@ -79,16 +80,21 @@ def _filter_overlapping_duplicate_elements(elements: List[Dict[str, Any]]) -> Li
             if relation == "none":
                 continue
 
-            if not _boxes_significantly_overlap(bbox_a, bbox_b):
-                continue
+            boxes_overlap = _boxes_significantly_overlap(bbox_a, bbox_b)
 
             if relation == "identical":
+                if not boxes_overlap:
+                    continue
                 if truncated_a == truncated_b:
                     continue
                 idx_to_remove = idx_a if truncated_a else idx_b
             elif relation == "a_subset_b":
+                if not (boxes_overlap or _box_contains(bbox_b, bbox_a)):
+                    continue
                 idx_to_remove = idx_a
             elif relation == "b_subset_a":
+                if not (boxes_overlap or _box_contains(bbox_a, bbox_b)):
+                    continue
                 idx_to_remove = idx_b
             else:
                 continue
@@ -177,8 +183,20 @@ def _coordinates_all_integer(coordinates: Any) -> bool:
     return has_coordinate
 
 
+def _strip_diacritics(text: str) -> str:
+    normalized = unicodedata.normalize("NFKD", text)
+    return "".join(ch for ch in normalized if not unicodedata.combining(ch))
+
+
 def _split_words(text: str) -> List[str]:
-    return [word for word in re.findall(r"\w+", text.lower()) if word]
+    result: List[str] = []
+    for word in re.findall(r"\w+", text.lower()):
+        if not word:
+            continue
+        cleaned = _strip_diacritics(word)
+        if cleaned:
+            result.append(cleaned)
+    return result
 
 
 def _contains_word_sequence(
@@ -214,7 +232,7 @@ def _compare_texts_for_overlap(
 def _boxes_significantly_overlap(
     box_a: tuple[float, float, float, float],
     box_b: tuple[float, float, float, float],
-    threshold: float = 0.85,
+    threshold: float = 0.8,
 ) -> bool:
     min_x_a, min_y_a, max_x_a, max_y_a = box_a
     min_x_b, min_y_b, max_x_b, max_y_b = box_b
@@ -240,6 +258,24 @@ def _boxes_significantly_overlap(
 
     overlap_ratio = intersection_area / smallest_area
     return overlap_ratio >= threshold
+
+
+_CONTAINMENT_MARGIN_PX = 12.0
+
+
+def _box_contains(
+    box_outer: tuple[float, float, float, float],
+    box_inner: tuple[float, float, float, float],
+    margin: float = _CONTAINMENT_MARGIN_PX,
+) -> bool:
+    min_x_o, min_y_o, max_x_o, max_y_o = box_outer
+    min_x_i, min_y_i, max_x_i, max_y_i = box_inner
+    return (
+        min_x_i >= min_x_o - margin
+        and min_y_i >= min_y_o - margin
+        and max_x_i <= max_x_o + margin
+        and max_y_i <= max_y_o + margin
+    )
 
 
 _MIN_TOKENS_FOR_SPACED_TEXT = 8
