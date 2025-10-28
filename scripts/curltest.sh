@@ -5,8 +5,8 @@ set -euo pipefail
 #LAYOUT_MODEL="detectron2_mask_rcnn"
 LAYOUT_MODEL="yolox"
 
-#FILE_PATH="/home/carlo/AI/"
-FILE_PATH="/home/carlo/Documenti/AI/data/odg_2023/"
+FILE_PATH="/home/carlo/AI/data/odg_2023/"
+#FILE_PATH="/home/carlo/Documenti/AI/data/odg_2023/"
 
 #FILE_NAME="odg005_11_01_23.pdf"        # Modello valutazione annuale
 #FILE_NAME="odg019_16_02_23.pdf"        # Tabella a pag. 3

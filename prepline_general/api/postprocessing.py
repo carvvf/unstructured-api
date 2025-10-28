@@ -5,7 +5,7 @@ import logging
 import math
 import re
 from contextlib import suppress
-from typing import IO, TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple
+from typing import IO, TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Tuple
 
 from PIL import Image as PILImage
 
@@ -73,18 +73,26 @@ def _filter_overlapping_duplicate_elements(elements: List[Dict[str, Any]]) -> Li
             if idx_b in indexes_to_remove:
                 continue
 
-            if text_a != text_b:
-                continue
             if page_a != page_b:
+                continue
+            relation = _compare_texts_for_overlap(text_a, text_b)
+            if relation == "none":
                 continue
 
             if not _boxes_significantly_overlap(bbox_a, bbox_b):
                 continue
 
-            if truncated_a == truncated_b:
+            if relation == "identical":
+                if truncated_a == truncated_b:
+                    continue
+                idx_to_remove = idx_a if truncated_a else idx_b
+            elif relation == "a_subset_b":
+                idx_to_remove = idx_a
+            elif relation == "b_subset_a":
+                idx_to_remove = idx_b
+            else:
                 continue
 
-            idx_to_remove = idx_a if truncated_a else idx_b
             indexes_to_remove.add(idx_to_remove)
 
     if not indexes_to_remove:
@@ -169,10 +177,44 @@ def _coordinates_all_integer(coordinates: Any) -> bool:
     return has_coordinate
 
 
+def _split_words(text: str) -> List[str]:
+    return [word for word in re.findall(r"\w+", text.lower()) if word]
+
+
+def _contains_word_sequence(
+    container_words: List[str], candidate_words: List[str]
+) -> bool:
+    if len(candidate_words) > len(container_words):
+        return False
+    span = len(candidate_words)
+    for start in range(len(container_words) - span + 1):
+        if container_words[start : start + span] == candidate_words:
+            return True
+    return False
+
+
+def _compare_texts_for_overlap(
+    text_a: str, text_b: str
+) -> Literal["identical", "a_subset_b", "b_subset_a", "none"]:
+    if text_a == text_b:
+        return "identical"
+
+    words_a = _split_words(text_a)
+    words_b = _split_words(text_b)
+
+    if len(words_a) >= 3 and _contains_word_sequence(words_b, words_a):
+        return "a_subset_b"
+
+    if len(words_b) >= 3 and _contains_word_sequence(words_a, words_b):
+        return "b_subset_a"
+
+    return "none"
+
+
 def _boxes_significantly_overlap(
     box_a: tuple[float, float, float, float],
     box_b: tuple[float, float, float, float],
-    threshold: float = 0.9,
+    threshold: float = 0.85,
 ) -> bool:
     min_x_a, min_y_a, max_x_a, max_y_a = box_a
     min_x_b, min_y_b, max_x_b, max_y_b = box_b
