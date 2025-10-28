@@ -281,6 +281,7 @@ def _box_contains(
 _MIN_TOKENS_FOR_SPACED_TEXT = 8
 _MIN_ALPHANUMERIC_TOKENS = 4
 _SPACED_TOKEN_RATIO_THRESHOLD = 0.75
+_MIN_SINGLE_CHAR_RUN = 6
 _ROTATION_SEQUENCE: Tuple[int, ...] = (90, 270, 180)
 _MIN_SCORE_IMPROVEMENT = 0.4
 
@@ -369,8 +370,6 @@ def _looks_like_spaced_text(text: str) -> bool:
     stripped = text.strip()
     if len(stripped) < 6:
         return False
-    if "  " not in text:
-        return False
     tokens = [token for token in stripped.split() if token]
     if len(tokens) < _MIN_TOKENS_FOR_SPACED_TEXT:
         return False
@@ -378,9 +377,23 @@ def _looks_like_spaced_text(text: str) -> bool:
     if alnum_tokens < _MIN_ALPHANUMERIC_TOKENS:
         return False
     single_char_tokens = sum(1 for token in tokens if len(token) == 1)
-    if not tokens or (single_char_tokens / len(tokens)) < _SPACED_TOKEN_RATIO_THRESHOLD:
+    if not tokens:
         return False
-    return True
+    single_char_ratio = single_char_tokens / len(tokens)
+    if single_char_ratio < _SPACED_TOKEN_RATIO_THRESHOLD:
+        return False
+    if "  " in text:
+        return True
+    longest_run = 0
+    current_run = 0
+    for token in tokens:
+        if len(token) == 1:
+            current_run += 1
+            if current_run > longest_run:
+                longest_run = current_run
+        else:
+            current_run = 0
+    return longest_run >= _MIN_SINGLE_CHAR_RUN
 
 
 def _text_quality_score(text: str) -> float:
