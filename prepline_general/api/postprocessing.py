@@ -5,8 +5,10 @@ import logging
 import math
 import re
 from contextlib import suppress
+from html import unescape
 import unicodedata
 from typing import IO, TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Tuple
+from xml.etree import ElementTree as ET
 
 from PIL import Image as PILImage
 
@@ -85,9 +87,10 @@ def _filter_overlapping_duplicate_elements(elements: List[Dict[str, Any]]) -> Li
             if relation == "identical":
                 if not boxes_overlap:
                     continue
-                if truncated_a == truncated_b:
-                    continue
-                idx_to_remove = idx_a if truncated_a else idx_b
+                if truncated_a and not truncated_b:
+                    idx_to_remove = idx_a
+                else:
+                    idx_to_remove = idx_b
             elif relation == "a_subset_b":
                 if not (boxes_overlap or _box_contains(bbox_b, bbox_a)):
                     continue
@@ -105,6 +108,53 @@ def _filter_overlapping_duplicate_elements(elements: List[Dict[str, Any]]) -> Li
         return elements
 
     return [element for index, element in enumerate(elements) if index not in indexes_to_remove]
+
+
+def _table_html_to_text(html: str) -> Optional[str]:
+    try:
+        root = ET.fromstring(html)
+    except ET.ParseError:
+        return None
+
+    rows: List[str] = []
+    for tr in root.findall(".//tr"):
+        cells: List[str] = []
+        for cell in tr:
+            tag = getattr(cell, "tag", "")
+            if not isinstance(tag, str) or tag.lower() not in {"td", "th"}:
+                continue
+            cell_text = "".join(cell.itertext())
+            if not cell_text:
+                continue
+            normalized = " ".join(unescape(cell_text).split())
+            normalized = normalized.strip()
+            if normalized:
+                cells.append(normalized.rstrip(";").strip())
+        if cells:
+            row_text = " ".join(cells).strip()
+            if row_text:
+                rows.append(row_text.rstrip(";"))
+
+    if not rows:
+        return None
+
+    return "; ".join(rows)
+
+
+def synchronize_table_text(elements: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    for element in elements:
+        if element.get("type") != "Table":
+            continue
+        metadata = element.get("metadata")
+        if not isinstance(metadata, dict):
+            continue
+        html = metadata.get("text_as_html")
+        if not isinstance(html, str):
+            continue
+        text_from_html = _table_html_to_text(html)
+        if text_from_html:
+            element["text"] = text_from_html
+    return elements
 
 
 def _as_float(value: Any) -> float | None:

@@ -36,6 +36,7 @@ from prepline_general.api.models.form_params import GeneralFormParams
 from prepline_general.api.postprocessing import (
     _filter_overlapping_duplicate_elements,
     _filter_single_character_text,
+    synchronize_table_text,
     repair_rotated_text_blocks,
 )
 from prepline_general.ocr.config import configure_ocr_backend_from_env
@@ -483,6 +484,7 @@ def pipeline_api(
 
     result = _filter_single_character_text(result)
     result = _filter_overlapping_duplicate_elements(result)
+    result = synchronize_table_text(result)
 
     return result
 
