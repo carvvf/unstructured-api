@@ -36,6 +36,7 @@ from prepline_general.api.models.form_params import GeneralFormParams
 from prepline_general.api.postprocessing import (
     _filter_overlapping_duplicate_elements,
     _filter_single_character_text,
+    _drop_native_snippets_for_table_overlap,
     synchronize_table_text,
     repair_rotated_text_blocks,
 )
@@ -469,6 +470,27 @@ def pipeline_api(
         return df.to_csv(index=False)
 
     result = convert_to_isd(elements)
+    for element_obj, element_dict in zip(elements, result):
+        if not isinstance(element_dict, dict):
+            continue
+        metadata_dict = element_dict.setdefault("metadata", {})
+        if not isinstance(metadata_dict, dict):
+            continue
+        metadata_obj = getattr(element_obj, "metadata", None)
+        source_value = getattr(metadata_obj, "text_extraction_source", None)
+        normalized_source: Optional[str] = None
+        if isinstance(source_value, str):
+            candidate = source_value.strip().lower()
+            if candidate:
+                normalized_source = candidate
+        if not normalized_source:
+            if isinstance(metadata_dict.get("text_as_html"), str) or element_dict.get("type") == "Table":
+                normalized_source = "ocr"
+            elif metadata_dict.get("image_base64"):
+                normalized_source = "ocr"
+            else:
+                normalized_source = "native"
+        metadata_dict["text_extraction_source"] = normalized_source
     if os.environ.get("UNSTRUCTURED_ENABLE_ROTATED_TEXT_FIX", "false").lower() in (
         "1",
         "true",
@@ -484,6 +506,7 @@ def pipeline_api(
 
     result = _filter_single_character_text(result)
     result = _filter_overlapping_duplicate_elements(result)
+    result = _drop_native_snippets_for_table_overlap(result)
     result = synchronize_table_text(result)
 
     return result

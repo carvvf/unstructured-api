@@ -157,6 +157,93 @@ def synchronize_table_text(elements: List[Dict[str, Any]]) -> List[Dict[str, Any
     return elements
 
 
+def _drop_native_snippets_for_table_overlap(elements: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    if not elements:
+        return elements
+
+    table_entries: List[tuple[int, tuple[float, float, float, float], List[str], set[str]]] = []
+    for idx, element in enumerate(elements):
+        if element.get("type") != "Table":
+            continue
+        metadata = element.get("metadata")
+        if not isinstance(metadata, dict):
+            continue
+        bbox = _extract_bounding_box(metadata.get("coordinates"))
+        if bbox is None:
+            continue
+        table_text = element.get("text")
+        normalized_variants: List[str] = []
+        if isinstance(table_text, str):
+            normalized = _normalize_for_alignment(table_text)
+            if normalized:
+                normalized_variants.append(normalized)
+        html_text = metadata.get("text_as_html")
+        if isinstance(html_text, str):
+            normalized_html = _normalize_for_alignment(html_text)
+            if normalized_html:
+                normalized_variants.append(normalized_html)
+        if not normalized_variants:
+            continue
+        token_set: set[str] = set()
+        for variant in normalized_variants:
+            for token in variant.split():
+                if token:
+                    token_set.add(token)
+        table_entries.append((idx, bbox, normalized_variants, token_set))
+
+    if not table_entries:
+        return elements
+
+    indexes_to_remove: set[int] = set()
+    for idx, element in enumerate(elements):
+        if element.get("type") == "Table":
+            continue
+        metadata = element.get("metadata")
+        if not isinstance(metadata, dict):
+            continue
+        if metadata.get("text_extraction_source") != "native":
+            continue
+        text = element.get("text")
+        if not isinstance(text, str):
+            continue
+        if len(text) > _NATIVE_TABLE_SNIPPET_MAX_CHARS:
+            continue
+
+        bbox = _extract_bounding_box(metadata.get("coordinates"))
+        if bbox is None:
+            continue
+
+        normalized_snippet = _normalize_for_alignment(text)
+        if not normalized_snippet:
+            continue
+
+        snippet_tokens = [token for token in normalized_snippet.split() if token]
+        for table_idx, table_bbox, table_norms, table_tokens in table_entries:
+            if not (
+                _boxes_significantly_overlap(table_bbox, bbox)
+                or _box_contains(table_bbox, bbox)
+                or _box_contains(bbox, table_bbox)
+            ):
+                continue
+
+            matches = False
+            if snippet_tokens:
+                match_count = sum(1 for token in snippet_tokens if token in table_tokens)
+                if match_count / len(snippet_tokens) >= 0.7:
+                    matches = True
+            if not matches:
+                matches = any(normalized_snippet in table_norm for table_norm in table_norms)
+
+            if matches:
+                indexes_to_remove.add(idx)
+                break
+
+    if not indexes_to_remove:
+        return elements
+
+    return [element for index, element in enumerate(elements) if index not in indexes_to_remove]
+
+
 def _as_float(value: Any) -> float | None:
     if isinstance(value, (int, float)):
         return float(value)
@@ -249,6 +336,18 @@ def _split_words(text: str) -> List[str]:
     return result
 
 
+def _normalize_for_alignment(text: str) -> str:
+    normalized = (
+        _strip_diacritics(text)
+        .lower()
+        .replace("–", "-")
+        .replace("—", "-")
+    )
+    normalized = normalized.replace("0", "o")
+    normalized = re.sub(r"[^0-9a-z]+", " ", normalized)
+    return re.sub(r"\s+", " ", normalized).strip()
+
+
 def _contains_word_sequence(
     container_words: List[str], candidate_words: List[str]
 ) -> bool:
@@ -311,6 +410,7 @@ def _boxes_significantly_overlap(
 
 
 _CONTAINMENT_MARGIN_PX = 12.0
+_NATIVE_TABLE_SNIPPET_MAX_CHARS = 200
 
 
 def _box_contains(

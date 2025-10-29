@@ -432,6 +432,11 @@ def _tooltip_text(
     if element_id:
         parts.append(f"ID: {element_id}")
 
+    if isinstance(metadata, Mapping):
+        source = metadata.get("text_extraction_source")
+        if isinstance(source, str) and source.strip():
+            parts.append(f"Source: {source.strip().lower()}")
+
     summary_source = raw_text.strip()
     if not summary_source and table_html:
         summary_source = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", table_html)).strip()
